@@ -3,52 +3,66 @@ package machine;
 import java.util.Scanner;
 
 public class CoffeeMachine {
+    enum State {
+        WaitAction,
+        WaitCoffeeType,
+        WaitFillAmount;
+
+    }
     private static int water = 400;
     private static int milk = 540;
     private static int beans = 120;
     private static int dispoCups = 9;
     private static int money = 550;
+    private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
         while(true) {
             System.out.println("Write action (buy, fill, take, remaining, exit):");
             String action = scanner.next();
-
-            if (action.equals("buy")) {
-                System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino:");
-                String input = scanner.next();
-                if (input.equals("back")) {
-                    continue;
-                } else {
-                    try {
-                        int coffeeKind = Integer.parseInt(input);
-                        buy(coffeeKind);
-                    } catch (Exception e) {
-                        throw(e);
-                    }
-                }
-
-            } else if (action.equals("fill")) {
-                System.out.println("Write how many ml of water do you want to add:");
-                int water = scanner.nextInt();
-                System.out.println("Write how many ml of milk do you want to add:");
-                int milk = scanner.nextInt();
-                System.out.println("Write how many grams of coffee beans do you want to add:");
-                int beans = scanner.nextInt();
-                System.out.println("Write how many disposable cups of coffee do you want to add:");
-                int dispoCups = scanner.nextInt();
-                fill(water, milk, beans, dispoCups);
-
-            } else if (action.equals("take")) {
-                take();
-            } else if (action.equals("remaining")) {
-                getMachineState();
-            } else if (action.equals("exit")) {
+            int result = consumeAction(action);
+            if (result == -1) {
                 break;
             }
+
         }
 
+    }
+
+    private static int consumeAction(String action) {
+        if (action.equals("buy")) {
+            System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino:");
+            String input = scanner.next();
+            if (input.equals("back")) {
+                return 0;
+            } else {
+                try {
+                    int coffeeKind = Integer.parseInt(input);
+                    buy(coffeeKind);
+                } catch (Exception e) {
+                    throw(e);
+                }
+            }
+
+        } else if (action.equals("fill")) {
+            System.out.println("Write how many ml of water do you want to add:");
+            int water = scanner.nextInt();
+            System.out.println("Write how many ml of milk do you want to add:");
+            int milk = scanner.nextInt();
+            System.out.println("Write how many grams of coffee beans do you want to add:");
+            int beans = scanner.nextInt();
+            System.out.println("Write how many disposable cups of coffee do you want to add:");
+            int dispoCups = scanner.nextInt();
+            fill(water, milk, beans, dispoCups);
+
+        } else if (action.equals("take")) {
+            take();
+        } else if (action.equals("remaining")) {
+            getMachineState();
+        } else if (action.equals("exit")) {
+            return -1;
+        }
+        return 0;
     }
 
     private static void buy(int coffeeKind) {
@@ -113,8 +127,8 @@ public class CoffeeMachine {
                 CoffeeMachine.money += 6;
                 CoffeeMachine.dispoCups -= 1;
                 System.out.println("I have enough resources, making you a coffee!");
-            break;
-        }
+                break;
+            }
         System.out.println("");
     }
 
