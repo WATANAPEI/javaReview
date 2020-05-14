@@ -1,18 +1,24 @@
 package flashcards;
-import java.awt.desktop.SystemSleepEvent;
 import java.io.*;
 import java.util.*;
 
 class CardDeck {
 
     private HashMap<String, String> deck;
+    private HashMap<String, Integer> wrongCount;
 
     public CardDeck() {
         this.deck = new LinkedHashMap<>();
+        this.wrongCount = new HashMap<>();
     }
 
     public void add(String key, String value) {
         this.deck.put(key, value);
+    }
+
+    public void addWithWrongCount(String key, String value, int wrongCount) {
+        add(key, value);
+        wrongAnswer(key, wrongCount);
     }
 
     public void remove(String key) throws NoCardFoundException {
@@ -20,6 +26,15 @@ class CardDeck {
             throw new NoCardFoundException("Can't remove \"" + key + "\": there is no such card.");
         } else {
             deck.remove(key);
+        }
+    }
+
+    public void removeWithWrongCount(String key) throws NoCardFoundException {
+        remove(key);
+        if(!wrongCount.containsKey(key)) {
+            throw new NoCardFoundException("Can't remove \"" + key + "\": there is no such card.");
+        } else {
+            wrongCount.remove(key);
         }
     }
 
@@ -43,8 +58,14 @@ class CardDeck {
         return this.deck.get(key);
     }
 
-    public Map.Entry<String, String> getEntry() {
-        return (Map.Entry<String, String>) this.deck.entrySet();
+    public void wrongAnswer(String key, int wrongCount) {
+        Integer count = this.wrongCount.getOrDefault(key, 0);
+        this.wrongCount.put(key, count + wrongCount);
+    }
+
+
+    public int wrongCount(String key) {
+        return this.wrongCount.get(key);
     }
 }
 
@@ -87,7 +108,7 @@ class CardDeckService {
             System.out.println(e.getMessage());
             return;
         }
-        cardDeck.add(term, def);
+        cardDeck.addWithWrongCount(term, def, 0);
         System.out.println("The pair {\"" + term + "\":\"" + def + "\"} has been added.");
         System.out.println("");
     }
@@ -126,11 +147,12 @@ class CardDeckService {
             while(scFile.hasNext()) {
                 String term = scFile.next();
                 String def = scFile.next();
+                int wrongCount = Integer.parseInt(scFile.next());
                 try {
                     if(cardDeck.containsKey(term)) {
-                        cardDeck.remove(term);
+                        cardDeck.removeWithWrongCount(term);
                     }
-                    cardDeck.add(term, def);
+                    cardDeck.addWithWrongCount(term, def, wrongCount);
                     ++count;
                 } catch (NoCardFoundException e) {
                     ;
@@ -149,7 +171,7 @@ class CardDeckService {
         try(PrintWriter printWriter = new PrintWriter(file)) {
             int count = 0;
             for(String term: cardDeck.keySet()) {
-                printWriter.println(term + "," + cardDeck.get(term));
+                printWriter.println(term + "," + cardDeck.get(term) + "," + cardDeck.wrongCount(term));
                 ++count;
             }
             System.out.println(count + " cards have been saved.");
@@ -163,7 +185,7 @@ class CardDeckService {
         System.out.println("The card:");
         String key = sc.nextLine();
         try {
-            cardDeck.remove(key);
+            cardDeck.removeWithWrongCount(key);
             System.out.println("The card has been removed.");
         } catch (NoCardFoundException e) {
             System.out.println(e.getMessage());
@@ -189,18 +211,21 @@ class CardDeckService {
             String ans = sc.nextLine();
             if(ans.equals(cardDeck.get(randomQuestionTerm))) {
                 System.out.println("Correct answer.");
-            } else if (cardDeck.containsValue(ans)) {
-                StringBuilder def = new StringBuilder();
-                for(String k: cardDeck.keySet()) {
-                    if (cardDeck.get(k).equals(ans)) {
-                        def.append(k);
-                    }
-                }
-                System.out.println("Wrong answer. The correct one is \"" + cardDeck.get(randomQuestionTerm)
-                        + "\", you've just written the definition of \"" + def + "\".");
-
             } else {
-                System.out.println("Wrong answer. The correct one is \"" + cardDeck.get(randomQuestionTerm) + "\".");
+                cardDeck.wrongAnswer(randomQuestionTerm, 1);
+                if (cardDeck.containsValue(ans)) {
+                    StringBuilder def = new StringBuilder();
+                    for (String k : cardDeck.keySet()) {
+                        if (cardDeck.get(k).equals(ans)) {
+                            def.append(k);
+                        }
+                    }
+                    System.out.println("Wrong answer. The correct one is \"" + cardDeck.get(randomQuestionTerm)
+                            + "\", you've just written the definition of \"" + def + "\".");
+
+                } else {
+                    System.out.println("Wrong answer. The correct one is \"" + cardDeck.get(randomQuestionTerm) + "\".");
+                }
             }
             asked++;
             randomNum = rand.nextInt(questions.size());
@@ -210,6 +235,10 @@ class CardDeckService {
             }
         }
     }
+
+    public void hardestCard(CardDeck cardDeck) {
+
+    }
 }
 
 public class Main {
@@ -218,7 +247,8 @@ public class Main {
         CardDeckService cardDeckService = CardDeckService.getInstance();
         CardDeck cardDeck = new CardDeck();
         while(true) {
-            System.out.println("Input the action (add, remove, import, export, ask, exit)");
+            System.out.println("Input the action (add, remove, import, export, ask, exit" +
+                    ", log, hardest card, reset status)");
             String action = sc.nextLine();
             switch (action) {
                 case "add":
@@ -235,6 +265,15 @@ public class Main {
                     break;
                 case "ask":
                     cardDeckService.ask(cardDeck);
+                    break;
+                case "logt":
+                    cardDeckService.log(cardDeck);
+                    break;
+                case "hardest card":
+                    cardDeckService.hardestCard(cardDeck);
+                    break;
+                case "reset status":
+                    cardDeckService.resetStatus(cardDeck);
                     break;
                 case "exit":
                     cardDeckService.exit();
