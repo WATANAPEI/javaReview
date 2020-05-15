@@ -1,4 +1,5 @@
 package flashcards;
+import java.awt.desktop.SystemSleepEvent;
 import java.io.*;
 import java.util.*;
 
@@ -58,11 +59,16 @@ class CardDeck {
         return this.deck.get(key);
     }
 
+    public void resetWrongCount() {
+        for(var e: wrongCount.keySet()) {
+            wrongCount.put(e, 0);
+        }
+    }
+
     public void wrongAnswer(String key, int wrongCount) {
         Integer count = this.wrongCount.getOrDefault(key, 0);
         this.wrongCount.put(key, count + wrongCount);
     }
-
 
     public int wrongCount(String key) {
         return this.wrongCount.get(key);
@@ -87,6 +93,7 @@ class DefinitionExistException extends Exception {
     }
 }
 class CardDeckService {
+    Logger log;
 
     private CardDeckService() {
     }
@@ -237,7 +244,80 @@ class CardDeckService {
     }
 
     public void hardestCard(CardDeck cardDeck) {
+        List<String> hardestTerm = new ArrayList<>();
+        int hardest = 0;
+        for(var e: cardDeck.keySet()) {
+            int tmpCount = cardDeck.wrongCount(e);
+            if(hardest < tmpCount) {
+                hardestTerm.clear();
+                hardest = tmpCount;
+                hardestTerm.add(e);
+            } else if (hardest == tmpCount) {
+                hardestTerm.add(e);
+            }
+        }
+        if(hardest == 0 ) {
+            System.out.println("There are no cards with errors.");
+        } else {
+            if (hardestTerm.size() == 1) {
+                System.out.println("The hardest card is \"" + hardestTerm.get(0) +
+            "\". You have " + hardest + " errors answering it.");
+            } else {
+                System.out.print("The hardest cards are ");
+                for(int i = 0; i < hardestTerm.size()-1; i++) {
+                    System.out.println("\"" + hardestTerm.get(i) + "\"");
+                    if(i != hardestTerm.size()-1) {
+                        System.out.println(", ");
+                    } else {
+                        System.out.println(". ");
+                    }
+                }
+                System.out.println("You have " + hardest + " errors answering them.");
+            }
+        }
 
+    }
+
+    public void resetStats(CardDeck cardDeck) {
+        cardDeck.resetWrongCount();
+        System.out.println("Card statistics has been reset.");
+    }
+
+    public void log(CardDeck cardDeck) {
+        String msg = "File name:";
+        log.printAndLog(msg);
+
+    }
+
+    public void setLogger(Logger log) {
+        this.log = log;
+    }
+}
+
+class Logger {
+    List<String> list;
+
+    public Logger() {
+        this.list = new ArrayList<>();
+    }
+
+    public void append(String msg) {
+        list.add(msg);
+    }
+
+    public void printAndLog(String msg) {
+        System.out.println(msg);
+        list.add(msg);
+    }
+
+    public void out(String path) {
+        try(FileWriter fileWriter = new FileWriter(path)) {
+            for(var str: list) {
+                fileWriter.write(str);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 
@@ -245,6 +325,8 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         CardDeckService cardDeckService = CardDeckService.getInstance();
+        Logger log = new Logger();
+        cardDeckService.setLogger(log);
         CardDeck cardDeck = new CardDeck();
         while(true) {
             System.out.println("Input the action (add, remove, import, export, ask, exit" +
@@ -266,14 +348,14 @@ public class Main {
                 case "ask":
                     cardDeckService.ask(cardDeck);
                     break;
-                case "logt":
+                case "log":
                     cardDeckService.log(cardDeck);
                     break;
                 case "hardest card":
                     cardDeckService.hardestCard(cardDeck);
                     break;
                 case "reset status":
-                    cardDeckService.resetStatus(cardDeck);
+                    cardDeckService.resetStats(cardDeck);
                     break;
                 case "exit":
                     cardDeckService.exit();
