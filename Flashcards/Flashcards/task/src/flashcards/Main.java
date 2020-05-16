@@ -1,5 +1,4 @@
 package flashcards;
-import java.awt.desktop.SystemSleepEvent;
 import java.io.*;
 import java.util.*;
 
@@ -143,11 +142,7 @@ class CardDeckService {
         }
     }
 
-    public void importDeck(CardDeck cardDeck) {
-        log.printAndLog("File name:");
-        MyScanner sc = new MyScanner(this.log, System.in);
-        String  path = sc.nextLine();
-        File file = new File(path);
+    public void importFile(File file, CardDeck cardDeck) {
         try {
             MyScanner scFile = new MyScanner(this.log, file);
             int count = 0;
@@ -172,10 +167,15 @@ class CardDeckService {
         }
     }
 
-    public void exportDeck(CardDeck cardDeck) {
+    public void importDeck(CardDeck cardDeck) {
         log.printAndLog("File name:");
         MyScanner sc = new MyScanner(this.log, System.in);
-        File file = new File(sc.nextLine());
+        String  path = sc.nextLine();
+        File file = new File(path);
+        importFile(file, cardDeck);
+    }
+
+    public void exportFile(File file, CardDeck cardDeck) {
         try(PrintWriter printWriter = new PrintWriter(file)) {
             int count = 0;
             for(String term: cardDeck.keySet()) {
@@ -186,6 +186,15 @@ class CardDeckService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+    }
+
+    public void exportDeck(CardDeck cardDeck) {
+        log.printAndLog("File name:");
+        MyScanner sc = new MyScanner(this.log, System.in);
+        File file = new File(sc.nextLine());
+        exportFile(file, cardDeck);
     }
 
     public void removeCard(CardDeck cardDeck) {
@@ -395,6 +404,25 @@ public class Main {
         cardDeckService.setLogger(logger);
         CardDeck cardDeck = new CardDeck();
         MyScanner sc = new MyScanner(logger, System.in);
+        // argument analysis
+        List<String> argList = Arrays.asList(args);
+        //Optional<File> importFile = null;
+        //Optional<File> exportFile = null;
+        File importFile = null;
+        File exportFile = null;
+        int importArgIdx = argList.indexOf("-import");
+        int exportArgIdx = argList.indexOf("-export");
+        if(importArgIdx != -1) {
+            importFile = new File(argList.get(importArgIdx + 1));
+        }
+        if(exportArgIdx != -1) {
+            exportFile = new File(argList.get(exportArgIdx + 1));
+        }
+        if(importFile != null ) {
+            cardDeckService.importFile(importFile, cardDeck);
+        }
+
+
         while(true) {
             logger.printAndLog("Input the action (add, remove, import, export, ask, exit" +
                     ", log, hardest card, reset stats)");
@@ -426,6 +454,9 @@ public class Main {
                     break;
                 case "exit":
                     cardDeckService.exit();
+                    if(exportFile != null) {
+                        cardDeckService.exportFile(exportFile, cardDeck);
+                    }
                     return;
             }
         }
