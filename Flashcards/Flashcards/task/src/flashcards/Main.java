@@ -94,12 +94,13 @@ class DefinitionExistException extends Exception {
 }
 class CardDeckService {
     Logger log;
+    private static CardDeckService cardDeckService = new CardDeckService();
 
     private CardDeckService() {
     }
 
     public static CardDeckService getInstance() {
-        return new CardDeckService();
+        return cardDeckService;
     }
 
     public void addCard(CardDeck cardDeck) {
@@ -121,7 +122,7 @@ class CardDeckService {
     }
 
     private String _getCardString(CardDeck cardDeck) throws TermExistException {
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         log.printAndLog("The card:");
         String input = sc.nextLine();
         if(cardDeck.containsKey(input)) {
@@ -132,7 +133,7 @@ class CardDeckService {
     }
 
     private String _getDefString(CardDeck cardDeck) throws DefinitionExistException{
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         log.printAndLog("The definition of the card:");
         String input = sc.nextLine();
         if(cardDeck.containsValue(input)) {
@@ -144,11 +145,11 @@ class CardDeckService {
 
     public void importDeck(CardDeck cardDeck) {
         log.printAndLog("File name:");
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         String  path = sc.nextLine();
         File file = new File(path);
         try {
-            Scanner scFile = new Scanner(file);
+            MyScanner scFile = new MyScanner(this.log, file);
             int count = 0;
             scFile.useDelimiter(",|\n");
             while(scFile.hasNext()) {
@@ -165,7 +166,7 @@ class CardDeckService {
                     ;
                 }
             }
-            log.printAndLog(count + " cards have been loaded");
+            log.printAndLog(count + " cards have been loaded.");
         } catch (FileNotFoundException e) {
             log.printAndLog("File not found.");
         }
@@ -173,7 +174,7 @@ class CardDeckService {
 
     public void exportDeck(CardDeck cardDeck) {
         log.printAndLog("File name:");
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         File file = new File(sc.nextLine());
         try(PrintWriter printWriter = new PrintWriter(file)) {
             int count = 0;
@@ -181,14 +182,14 @@ class CardDeckService {
                 printWriter.println(term + "," + cardDeck.get(term) + "," + cardDeck.wrongCount(term));
                 ++count;
             }
-            log.printAndLog(count + " cards have been saved.");
+            log.printAndLog(count + " cards have been saved");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void removeCard(CardDeck cardDeck) {
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         log.printAndLog("The card:");
         String key = sc.nextLine();
         try {
@@ -199,13 +200,19 @@ class CardDeckService {
         }
     }
 
+    /**
+     *
+     */
     public void exit() {
         log.printAndLog("Bye bye!");
     }
 
+    /**
+     * @param cardDeck
+     */
     public void ask(CardDeck cardDeck) {
         log.printAndLog("How many times to ask?");
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         int askTime = sc.nextInt(); sc.nextLine();
         int asked = 0;
         List<String> questions = new ArrayList<String>(cardDeck.keySet());
@@ -243,6 +250,10 @@ class CardDeckService {
         }
     }
 
+    /**
+     *
+     * @param cardDeck
+     */
     public void hardestCard(CardDeck cardDeck) {
         List<String> hardestTerm = new ArrayList<>();
         int hardest = 0;
@@ -263,16 +274,9 @@ class CardDeckService {
                 log.printAndLog("The hardest card is \"" + hardestTerm.get(0) +
             "\". You have " + hardest + " errors answering it.");
             } else {
-                System.out.print("The hardest cards are ");
-                for(int i = 0; i < hardestTerm.size()-1; i++) {
-                    log.printAndLog("\"" + hardestTerm.get(i) + "\"");
-                    if(i != hardestTerm.size()-1) {
-                        log.printAndLog(", ");
-                    } else {
-                        log.printAndLog(". ");
-                    }
-                }
-                log.printAndLog("You have " + hardest + " errors answering them.");
+                String msg = "".join("\",\"", hardestTerm);
+                log.printAndLog("The hardest cards are \"" + msg + "\". " +
+                        "You have" + hardest + " errors answering them.");
             }
         }
 
@@ -286,7 +290,7 @@ class CardDeckService {
     public void log(CardDeck cardDeck) {
         String msg = "File name:";
         log.printAndLog(msg);
-        Scanner sc = new Scanner(System.in);
+        MyScanner sc = new MyScanner(this.log, System.in);
         String filename = sc.nextLine();
         log.out(filename);
         log.printAndLog("The log has been saved.");
@@ -316,9 +320,8 @@ class Logger {
 
     public void out(String path) {
         try(FileWriter fileWriter = new FileWriter(path)) {
-            for(var str: list) {
-                fileWriter.write(str);
-            }
+            String str = "".join("\n", list);
+            fileWriter.write(str);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -328,41 +331,83 @@ class Logger {
 class MyScanner {
     Logger logger;
     Scanner sc;
-    public MyScanner(Logger logger) {
+    public MyScanner(Logger logger, InputStream in) {
         this.logger = logger;
-        this.sc = new Scanner(System.in);
+        this.sc = new Scanner(in);
+    }
 
+    public MyScanner(Logger logger, File file) throws FileNotFoundException {
+        this.logger = logger;
+        this.sc = new Scanner(file);
+    }
+
+    public void useDelimiter(String delimiter) {
+        sc.useDelimiter(delimiter);
+    }
+
+    public boolean hasNext() {
+        return sc.hasNext();
     }
 
     public int nextInt() {
         int scannedInt = sc.nextInt();
-        logger.printAndLog("" + scannedInt);
+        logger.append("" + scannedInt);
         return scannedInt;
     }
 
     public String next() {
         String scannedStr = sc.next();
-        logger.printAndLog(scannedStr);
+        logger.append(scannedStr);
         return scannedStr;
     }
 
     public String nextLine() {
         String scannedLine = sc.nextLine();
-        logger.printAndLog(scannedLine);
+        logger.append(scannedLine);
         return scannedLine;
     }
 }
 
+class MyInputStream extends InputStream{
+    private static MyInputStream myInputStream = new MyInputStream();
+    private MyInputStream() {}
+    private Logger logger;
+    private StringBuilder strLine = new StringBuilder();
+
+    @Override
+    public int read() throws IOException {
+        int result = System.in.read();
+        byte[] tmp = new byte[] {(byte)result};
+        String resultStr = new String(tmp);
+        strLine.append(resultStr);
+        if(resultStr.contentEquals("\n")) {
+            logger.append(strLine.toString());
+            result = -1;
+        }
+        return result;
+    }
+
+    public static MyInputStream getInstance() {
+        return myInputStream;
+    }
+
+    public void setLogger(Logger logger ) {
+        this.logger = logger;
+    }
+
+
+}
+
 public class Main {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
         CardDeckService cardDeckService = CardDeckService.getInstance();
-        Logger log = new Logger();
-        cardDeckService.setLogger(log);
+        Logger logger = new Logger();
+        cardDeckService.setLogger(logger);
         CardDeck cardDeck = new CardDeck();
+        MyScanner sc = new MyScanner(logger, System.in);
         while(true) {
-            log.printAndLog("Input the action (add, remove, import, export, ask, exit" +
-                    ", log, hardest card, reset status)");
+            logger.printAndLog("Input the action (add, remove, import, export, ask, exit" +
+                    ", log, hardest card, reset stats)");
             String action = sc.nextLine();
             switch (action) {
                 case "add":
@@ -386,7 +431,7 @@ public class Main {
                 case "hardest card":
                     cardDeckService.hardestCard(cardDeck);
                     break;
-                case "reset status":
+                case "reset stats":
                     cardDeckService.resetStats(cardDeck);
                     break;
                 case "exit":
