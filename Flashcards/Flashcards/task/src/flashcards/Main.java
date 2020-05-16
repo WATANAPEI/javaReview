@@ -200,16 +200,10 @@ class CardDeckService {
         }
     }
 
-    /**
-     *
-     */
     public void exit() {
         log.printAndLog("Bye bye!");
     }
 
-    /**
-     * @param cardDeck
-     */
     public void ask(CardDeck cardDeck) {
         log.printAndLog("How many times to ask?");
         MyScanner sc = new MyScanner(this.log, System.in);
@@ -250,10 +244,6 @@ class CardDeckService {
         }
     }
 
-    /**
-     *
-     * @param cardDeck
-     */
     public void hardestCard(CardDeck cardDeck) {
         List<String> hardestTerm = new ArrayList<>();
         int hardest = 0;
