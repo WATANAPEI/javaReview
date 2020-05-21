@@ -1,14 +1,35 @@
 package encryptdecrypt;
 
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Main {
+
+    public static Map<String, String> getOpts(String[] args) {
+        List<String> stringList = Arrays.asList(args);
+        Map<String, String> optMap = new HashMap<>();
+        int modePos = stringList.indexOf("-mode");
+        int keyPos = stringList.indexOf("-key");
+        int dataPos = stringList.indexOf("-data");
+        if(modePos == -1) {
+            optMap.put("mode", "enc");
+        } else {
+            optMap.put("mode", stringList.get(modePos+1));
+        }
+
+        if(keyPos == -1) {
+            optMap.put("key", "0");
+        } else {
+            optMap.put("key", stringList.get(keyPos+1));
+        }
+        if(dataPos == -1) {
+            optMap.put("data", "");
+        } else {
+            optMap.put("data", stringList.get(dataPos+1));
+        }
+        return optMap;
+
+    }
 
     public static List<String> getInputLines() {
         String mode = null;
@@ -28,35 +49,11 @@ public class Main {
         return list;
     }
 
-    public static String encryptCaesar(String in, int shiftNumber) {
-        StringBuilder sb = new StringBuilder();
-        for(char c: in.toCharArray()) {
-            int shiftedCharNum = c + shiftNumber;
-            //System.out.println(shiftedCharNum);
-            char encryptedChar = (char)(shiftedCharNum);
-            //System.out.println(encryptedChar);
-            sb.append(encryptedChar);
-        }
-        return sb.toString();
-    }
-
-    public static String decryptCaesar(String in, int shiftNumber) {
-        StringBuilder sb = new StringBuilder();
-        for(char c: in.toCharArray()) {
-            int shiftedCharNum = c - shiftNumber;
-            //System.out.println(shiftedCharNum);
-            char encryptedChar = (char)(shiftedCharNum);
-            //System.out.println(encryptedChar);
-            sb.append(encryptedChar);
-        }
-        return sb.toString();
-    }
-
     public static void main(String[] args) {
-        List<String> list = getInputLines();
-        String mode = list.get(0);
-        String stringToConvert = list.get(1);
-        int shiftNumber = Integer.parseInt(list.get(2));
+        Map<String, String> opts = getOpts(args);
+        String mode = opts.get("mode");
+        String stringToConvert = opts.get("data");
+        int shiftNumber = Integer.parseInt(opts.get("key"));
         Map<String, Command> commandMap = new HashMap();
         commandMap.put("enc", Command.Enc);
         commandMap.put("dec", Command.Dec);
