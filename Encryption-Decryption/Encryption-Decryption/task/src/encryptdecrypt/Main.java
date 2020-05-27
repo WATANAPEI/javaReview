@@ -13,6 +13,8 @@ public class Main {
         int dataPos = stringList.indexOf("-data");
         int inPos = stringList.indexOf("-in");
         int outPos = stringList.indexOf("-out");
+        int algPos = stringList.indexOf("-alg");
+
 
         if(modePos == -1) {
             optMap.put("mode", "enc");
@@ -41,6 +43,12 @@ public class Main {
         } else {
             optMap.put("data", stringList.get(dataPos + 1));
         }
+
+        if(algPos == -1) {
+            optMap.put("alg", "shift");
+        } else {
+            optMap.put("alg", stringList.get(algPos+1));
+        }
         return optMap;
 
     }
@@ -66,6 +74,7 @@ public class Main {
     public static void main(String[] args) {
         Map<String, String> opts = getOpts(args);
         String mode = opts.get("mode");
+        String alg = opts.get("alg");
         int shiftNumber = Integer.parseInt(opts.get("key"));
         String stringToConvert = null;
         //System.out.println(System.getProperty("user.dir"));
@@ -87,10 +96,17 @@ public class Main {
             stringToConvert = opts.get("data");
         }
 
-        Map<String, Command> commandMap = new HashMap();
-        commandMap.put("enc", Command.Enc);
-        commandMap.put("dec", Command.Dec);
-        String convertedStr = commandMap.get(mode).convertStr(stringToConvert, shiftNumber);
+        String convertedStr = null;
+        if(mode.contentEquals("enc") && alg.contentEquals("unicode")) {
+            convertedStr = Command.EncUni.convertStr(stringToConvert, shiftNumber);
+        } else if(mode.contentEquals("enc") && alg.contentEquals("shift")) {
+            convertedStr = Command.EncShift.convertStr(stringToConvert, shiftNumber);
+        } else if(mode.contentEquals("dec") && alg.contentEquals("unicode")) {
+            convertedStr = Command.DecUni.convertStr(stringToConvert, shiftNumber);
+        } else if(mode.contentEquals("dec") && alg.contentEquals("shift")) {
+            convertedStr = Command.DecShift.convertStr(stringToConvert, shiftNumber);
+        }
+
         if(opts.get("out").contentEquals("stdout")) {
             System.out.println(convertedStr);
         } else {
@@ -107,7 +123,7 @@ public class Main {
 }
 
 enum Command {
-    Enc {
+    EncUni {
         @Override
         public String convertStr(String in, int shiftNumber) {
             StringBuilder sb = new StringBuilder();
@@ -122,7 +138,7 @@ enum Command {
 
         }
     },
-    Dec {
+    DecUni {
         @Override
         public String convertStr(String in, int shiftNumber) {
             StringBuilder sb = new StringBuilder();
@@ -134,9 +150,57 @@ enum Command {
                 sb.append(encryptedChar);
             }
             return sb.toString();
-
         }
-
+    },
+    EncShift {
+        @Override
+        public String convertStr(String in, int shiftNumber) {
+            StringBuilder sb = new StringBuilder();
+            for(char c: in.toCharArray()) {
+                if(Character.isLowerCase(c)) {
+                    int shiftedCharNum = ((c - 'a') +  shiftNumber) % ('z' - 'a' + 1) + 'a';
+                    char encryptedChar = (char)(shiftedCharNum);
+                    sb.append(encryptedChar);
+                } else if (Character.isUpperCase(c)) {
+                    int shiftedCharNum = ((c - 'A') +  shiftNumber) % ('Z' - 'A' + 1) + 'A';
+                    char encryptedChar = (char)(shiftedCharNum);
+                    sb.append(encryptedChar);
+                } else {
+                    sb.append(c);
+                }
+            }
+            return sb.toString();
+        }
+    },
+    DecShift {
+        @Override
+        public String convertStr(String in, int shiftNumber) {
+            StringBuilder sb = new StringBuilder();
+            for(char c: in.toCharArray()) {
+                if(Character.isLowerCase(c)) {
+                    int shiftedCharNum = (c - 'a')  -shiftNumber;
+                    if(shiftedCharNum < 0) {
+                        shiftedCharNum = shiftedCharNum + ('z'-'a' + 1) + 'a';
+                    } else {
+                        shiftedCharNum = shiftedCharNum + 'a';
+                    }
+                    char encryptedChar = (char)(shiftedCharNum);
+                    sb.append(encryptedChar);
+                } else if (Character.isUpperCase(c)) {
+                    int shiftedCharNum = (c - 'A')  -shiftNumber;
+                    if(shiftedCharNum < 0) {
+                        shiftedCharNum = shiftedCharNum + ('Z'-'A' + 1) + 'A';
+                    } else {
+                        shiftedCharNum = shiftedCharNum + 'A';
+                    }
+                    char encryptedChar = (char)(shiftedCharNum);
+                    sb.append(encryptedChar);
+                } else {
+                    sb.append(c);
+                }
+            }
+            return sb.toString();
+        }
     };
 
     public abstract String convertStr(String in, int shiftNumber);
