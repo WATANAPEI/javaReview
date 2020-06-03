@@ -13,6 +13,9 @@ public class Main {
         String outFilePath = args[3];
         //System.out.println(outFilePath);
 
+        double x = 0;
+        double y = 0;
+        double z = 0;
 
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(inFilePath))) {
             int varNum = Integer.parseInt(bufferedReader.readLine());
@@ -54,17 +57,23 @@ public class Main {
             //printMatrix(matrix);
 
             // solve reversely
-            double z = matrix[2][3];
-            double y = matrix[1][3] - matrix[1][2] * z;
-            double x = matrix[0][3] - matrix[0][2] * z - matrix[0][1] * y;
-            System.out.println(x);
-            System.out.println(y);
-            System.out.println(z);
-
-
-
+            z = matrix[2][3];
+            y = matrix[1][3] - matrix[1][2] * z;
+            x = matrix[0][3] - matrix[0][2] * z - matrix[0][1] * y;
+            //System.out.println(x);
+            //System.out.println(y);
+            //System.out.println(z);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try(BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(outFilePath))){
+            bufferedWriter.write(String.valueOf(x) + "\n");
+            bufferedWriter.write(String.valueOf(y) + "\n");
+            bufferedWriter.write(String.valueOf(z) + "\n");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
