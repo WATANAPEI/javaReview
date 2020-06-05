@@ -13,14 +13,17 @@ public class Main {
         String outFilePath = args[3];
         //System.out.println(outFilePath);
 
-        double x = 0;
-        double y = 0;
-        double z = 0;
+        //double x = 0;
+        //double y = 0;
+        //double z = 0;
+        int varNum = 0;
+        double[] result = null;
 
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(inFilePath))) {
-            int varNum = Integer.parseInt(bufferedReader.readLine());
+            varNum = Integer.parseInt(bufferedReader.readLine());
             double[][] matrix = new double[varNum][varNum+1];
 
+            // parse input matrix
             for(int i = 0; i < varNum; i++){
                 String[] numbersInRow = bufferedReader.readLine().split("\\s+");
                 for(int j = 0; j < numbersInRow.length; j++) {
@@ -29,6 +32,7 @@ public class Main {
             }
             //printMatrix(matrix);
 
+            /*
             for(int i = 0; i < varNum - 1; i++) {
                 double r = matrix[i+1][0] / matrix[0][0];
                 for(int j = 0; j < matrix[i].length; j++) {
@@ -54,12 +58,36 @@ public class Main {
                     matrix[2][i] /= r;
                 }
             }
+
+             */
+            for(int k = 0; k < varNum - 1; k++) {
+                for(int i = k; i < varNum - 1; i++) {
+                    double r = matrix[i+1][k] / matrix[k][k];
+                    for(int j = k; j < matrix[i].length; j++) {
+                        matrix[i+1][j] -= r * matrix[k][j];
+                    }
+                }
+                if(matrix[k+1][k+1] != 1 ) {
+                    double r = matrix[k+1][k+1];
+                    for(int i = 0; i < matrix[k+1].length; i++) {
+                        matrix[k+1][i] /= r;
+                    }
+                }
+
+            }
             //printMatrix(matrix);
 
             // solve reversely
-            z = matrix[2][3];
-            y = matrix[1][3] - matrix[1][2] * z;
-            x = matrix[0][3] - matrix[0][2] * z - matrix[0][1] * y;
+            //z = matrix[2][3];
+            //y = matrix[1][3] - matrix[1][2] * z;
+            //x = matrix[0][3] - matrix[0][2] * z - matrix[0][1] * y;
+            result = new double[varNum];
+            for(int i = 0; i < varNum; i++) {
+                result[varNum-i-1] = matrix[varNum-i-1][varNum];
+                for(int j = 0 ; j < i ;j++) {
+                    result[varNum-i-1] -= matrix[varNum-i-1][varNum-j-1] * result[varNum-j-1];
+                }
+            }
             //System.out.println(x);
             //System.out.println(y);
             //System.out.println(z);
@@ -70,9 +98,13 @@ public class Main {
         }
 
         try(BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(outFilePath))){
-            bufferedWriter.write(String.valueOf(x) + "\n");
-            bufferedWriter.write(String.valueOf(y) + "\n");
-            bufferedWriter.write(String.valueOf(z) + "\n");
+            //bufferedWriter.write(String.valueOf(x) + "\n");
+            //bufferedWriter.write(String.valueOf(y) + "\n");
+            //bufferedWriter.write(String.valueOf(z) + "\n");
+            for(int i = 0 ; i < varNum; i++) {
+                bufferedWriter.write(String.valueOf(result[i]) + "\n");
+
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
