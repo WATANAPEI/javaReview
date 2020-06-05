@@ -60,6 +60,10 @@ public class Main {
             }
 
              */
+            double c = matrix[0][0];
+            for(int i = 0; i <= varNum; i++) {
+                matrix[0][i] /= c;
+            }
             for(int k = 0; k < varNum - 1; k++) {
                 for(int i = k; i < varNum - 1; i++) {
                     double r = matrix[i+1][k] / matrix[k][k];
