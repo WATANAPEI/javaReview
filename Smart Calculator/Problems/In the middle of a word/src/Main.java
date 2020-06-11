@@ -12,7 +12,7 @@ public class Main {
         //String regexStr = "([a-zA-Z]+\\s)+.+" + part  + ".+(\\s[a-zA-Z]+)";
         //String regexStr = "([a-zA-Z]*\\s+)*" + part + "([a-zA-Z]*\\s+)*";
         String regexStr = "[a-zA-Z]+" + part + "[a-zA-Z]+";
-        Pattern pattern = Pattern.compile(part, Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(regexStr, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(line);
         if(matcher.find()) {
             System.out.println("YES");
