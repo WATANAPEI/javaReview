@@ -1,29 +1,102 @@
 package calculator;
 
+import java.io.StringReader;
 import java.text.ParseException;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 // BNF
-// <Expr> := <Number> ( <Operator> <Number> )*
-// <Operator> := <Operator>* | + | -
+// <Expr> := <Number> | (<RHS>)*
+// <RHS> := <OperatorList> <Number>
+// <OperatorList> := <Operator>*
+// <Operator> := + | -
 
-interface Node {
-    public void parse(Context context) throws ParseException;
+abstract class Node {
+    abstract void parse(Context context) throws ParseException;
 }
 
-class ExprNode implements Node {
+class ExprNode extends Node {
     // BNF
-    // <Expr> := <Number> ( <Operator> <Number> )*
+    // <Expr> := <Number> | (<RHS>)*
+    Integer number = 0;
+    List<Node> rhs = new ArrayList<>();
     public void parse(Context context) throws ParseException {
-        Integer number;
         try {
             number = context.getCurrentNumber();
         } catch (ParseException e) {
             throw new ParseException("Error: " + e, 0);
         }
+        while(context.nextToken() != null) {
+            Node rhsNode = new RhsNode();
+            rhsNode.parse(context);
+            rhs.add(rhsNode);
+        }
+    }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder(number);
+        for(var e: rhs) {
+            sb.append(" " + e + " ");
+        }
+        return sb.toString();
 
     }
+}
+
+class RhsNode extends Node {
+    // BNF
+    // <RHS> := <OperatorList> <Number>
+    Node operatorList;
+    Integer number;
+    void parse(Context context) {
+        operatorList = new OperatorNode();
+        try {
+            operatorList.parse(context);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        context.nextToken();
+        try {
+            number = context.getCurrentNumber();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String toString() {
+        return operatorList.toString() + " " + number.toString();
+    }
+
+}
+
+class OperatorNode extends Node{
+    // BNF
+    // <Operator> := <Operator>*
+    // <OperatorList> := + | -
+    char operator = ' ';
+    void parse(Context context) throws ParseException {
+        char operator = '+';
+        String token = context.getCurrentToken();
+        for(var e: token.split("")) {
+            if(e.contentEquals("+")) {
+                operator = '+';
+            } else if (e.contentEquals("-")) {
+                if(operator == '-') {
+                    operator = '+';
+                }else {
+                    operator = '-';
+                }
+            } else {
+                new ParseException("Parse Error at OperatorNode", 0);
+            }
+        }
+    }
+
+    public String toString() {
+        return String.valueOf(operator);
+    }
+
 }
 
 class Context {
@@ -79,8 +152,12 @@ public class Main {
                 exit();
                 return; //terminate program here
             } else {
-                Node node = new CalculateNode();
-                node.parse(new Context(line));
+                Node node = new ExprNode();
+                try {
+                    node.parse(new Context(line));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
