@@ -78,7 +78,7 @@ class Lexer {
     Token nextToken() {
         if(sc.hasNext()) {
             String nextStr = sc.next();
-            if(nextStr.matches("\\d+")) {
+            if(nextStr.matches("[\\+-]?\\d+")) {
                 return new NumToken(Integer.parseInt(nextStr));
             } else {
                 return new OpToken(nextStr);
@@ -128,7 +128,8 @@ class NumNode extends AST {
 }
 
 // BNF
-// <Expr> := <Number> | (<Op> <Number>)*
+// <Expr> := <Unary> | (<Op> <Unary>)*
+// <Unary> := +<Number> | -<Number> | <Number>
 // <Op> := (+ | -)*
 
 class Parser {
@@ -166,17 +167,19 @@ class Parser {
 
     AST parseExpr() throws ParseException{
         AST node = parseNum();
-        while(currentToken.type == TokenType.OP) {
-            Token opToken = currentToken;
-            try {
-                consume(TokenType.OP);
-            } catch (ParseException e) {
-                throw e;
+        while(currentToken != null) {
+            Token opToken;
+            if(currentToken.type == TokenType.OP) {
+                opToken = currentToken;
+                try {
+                    consume(TokenType.OP);
+                } catch (ParseException e) {
+                    throw e;
+                }
+            } else {
+                throw new ParseException("Invalid expression", 0);
             }
             node = new BinOpNode(node, ((OpToken)opToken).getValue(), parseNum());
-            if(currentToken == null) {
-                break;
-            }
         }
         return node;
     }
@@ -236,17 +239,19 @@ public class Main {
                 break; //terminate program here
             } else if(line.contains("/") && !line.contentEquals("/exit") && !line.contentEquals("/help")) {
                 unknown();
+            } else if(line.contentEquals("")) {
+                ;
             } else {
-                Lexer lexer = new Lexer(line); // generate tokens
-                Parser parser = new Parser(lexer); // generate AST
-                Interpreter interpreter = new Interpreter(parser);
-                try {
-                    System.out.println(interpreter.interpret());
-                } catch(ParseException e) {
-                    System.out.println(e.getMessage());
+                    Lexer lexer = new Lexer(line); // generate tokens
+                    Parser parser = new Parser(lexer); // generate AST
+                    Interpreter interpreter = new Interpreter(parser);
+                    try {
+                        System.out.println(interpreter.interpret());
+                    } catch(ParseException e) {
+                        System.out.println(e.getMessage());
+                    }
+                    //System.out.println(node.toString());
                 }
-                //System.out.println(node.toString());
-            }
         }
     }
 
