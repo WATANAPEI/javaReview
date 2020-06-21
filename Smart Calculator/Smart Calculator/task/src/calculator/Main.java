@@ -35,7 +35,7 @@ class ExprNode extends Node {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder(number);
+        StringBuilder sb = new StringBuilder(number.toString());
         for(var e: rhs) {
             sb.append(" " + e + " ");
         }
@@ -76,7 +76,7 @@ class OperatorNode extends Node{
     // <OperatorList> := + | -
     char operator = ' ';
     void parse(Context context) throws ParseException {
-        char operator = '+';
+        operator = '+';
         String token = context.getCurrentToken();
         for(var e: token.split("")) {
             if(e.contentEquals("+")) {
@@ -110,10 +110,11 @@ class Context {
 
     public String nextToken() {
         if (sc.hasNext()) {
-            return sc.next();
+            currentToken = sc.next();
         } else {
-            return null;
+            currentToken = null;
         }
+        return currentToken;
     }
 
     public void skipToken(String expectedToken) throws ParseException {
@@ -150,11 +151,12 @@ public class Main {
                 help();
             } else if (line.contentEquals("/exit")) {
                 exit();
-                return; //terminate program here
+                break; //terminate program here
             } else {
                 Node node = new ExprNode();
                 try {
-                    node.parse(new Context(line));
+                    node.parse(new Context(line)); //construct BST
+                    System.out.println(node.toString());
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
