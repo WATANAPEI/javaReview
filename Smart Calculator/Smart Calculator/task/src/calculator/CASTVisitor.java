@@ -7,7 +7,7 @@ package calculator;
  */
 
 public interface CASTVisitor {
-    public int visit(ExprNode node);
+    public int visit(ExprNode_ node);
     public void visit(RhsNode node);
     public char visit(OperatorNode node);
 }

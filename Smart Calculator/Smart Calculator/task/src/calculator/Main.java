@@ -5,7 +5,9 @@ import java.util.Scanner;
 
 enum TokenType {
     NUM,
-    OP;
+    OP,
+    ID,
+    ASSIGN;
 }
 enum OpType {
     ADD,
@@ -17,11 +19,15 @@ enum OpType {
  */
 abstract class Token {
     TokenType type;
+    String image;
+
+    public String toString() {
+        return image;
+    }
 }
 
 class NumToken extends Token {
     private Integer value;
-    private String image;
     NumToken(Integer value) {
         this.value = value;
         this.type = TokenType.NUM;
@@ -30,14 +36,10 @@ class NumToken extends Token {
     public Integer getValue() {
         return this.value;
     }
-    public String toString() {
-        return this.image;
-    }
 }
 
 class OpToken extends Token {
     private OpType translatedOp;
-    private String image;
 
     OpToken(String value) {
         this.type = TokenType.OP;
@@ -65,10 +67,29 @@ class OpToken extends Token {
         return this.translatedOp;
     }
 
-    public String toString() {
-        return this.image;
-    }
 }
+
+class IdToken extends Token {
+
+    public IdToken(String image) {
+        this.image = image;
+        this.type = TokenType.ID;
+    }
+
+}
+
+class AssignToken extends Token {
+
+    public AssignToken(String image) {
+        this.image = image;
+        this.type = TokenType.ASSIGN;
+    }
+
+}
+
+/**
+ * Lexer
+ */
 class Lexer {
     private Scanner sc;
 
@@ -76,30 +97,88 @@ class Lexer {
         sc = new Scanner(line);
     }
     Token nextToken() {
-        if(sc.hasNext()) {
+        if (sc.hasNext()) {
             String nextStr = sc.next();
-            if(nextStr.matches("[\\+-]?\\d+")) {
+            if (nextStr.matches("[\\+-]?\\d+")) {
                 return new NumToken(Integer.parseInt(nextStr));
+            } else if (nextStr.matches("\\w+")) {
+                return new IdToken(nextStr);
+            } else if (nextStr.matches("=")) {
+                return new AssignToken(nextStr);
             } else {
                 return new OpToken(nextStr);
             }
         } else {
-            return  null;
+            return null;
         }
     }
 
 }
 
-abstract class AST {
+/**
+ * Node classes
+ */
+
+abstract class Node {
+    public Node() {}
+
     abstract Integer accept(NodeVisitor v);
 }
 
-class BinOpNode extends AST {
-    AST left;
-    OpType op; //this node
-    AST right;
+abstract class ExprNode extends Node_ {
+    ExprNode() {
+        super();
+    }
 
-    BinOpNode(AST left, OpType op, AST right) {
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
+    }
+}
+
+class UnaryNode extends ExprNode {
+    PrimaryNode node;
+    String uniOp;
+
+    UnaryNode(PrimaryNode node, String uniOp) {
+        super();
+        this.node = node;
+        this.uniOp = uniOp;
+    }
+
+    UnaryNode(PrimaryNode node) {
+        new UnaryNode(node, "");
+    }
+
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
+
+    }
+}
+
+class PrimaryNode extends ExprNode {
+    ExprNode node;
+    PrimaryNode(ExprNode node) {
+        super();
+        this.node = node;
+    }
+
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
+    }
+}
+
+
+class BinOpNode extends ExprNode {
+
+    ExprNode left;
+    OpType op;
+    ExprNode right;
+
+    BinOpNode(ExprNode left, OpType op, ExprNode right) {
+        super();
         this.left = left;
         this.op = op;
         this.right = right;
@@ -111,9 +190,10 @@ class BinOpNode extends AST {
     }
 }
 
-class NumNode extends AST {
+class NumNode extends ExprNode {
     Integer value;
     NumNode(Integer value) {
+        super();
         this.value = value;
     }
 
@@ -127,10 +207,51 @@ class NumNode extends AST {
     }
 }
 
-// BNF
-// <Expr> := <Unary> | (<Op> <Unary>)*
-// <Unary> := +<Number> | -<Number> | <Number>
-// <Op> := (+ | -)*
+class VariableNode extends ExprNode {
+    ExprNode node;
+
+    public VariableNode(ExprNode node) {
+        super();
+        this.node = node;
+    }
+
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
+    }
+
+}
+
+class AssignNode extends ExprNode {
+    ExprNode lhs;
+    AssignNode assignNode;
+    ExprNode rhs;
+
+    AssignNode(ExprNode lhs, AssignNode assignNode, ExprNode rhs) {
+        super();
+        this.lhs = lhs;
+        this.assignNode = assignNode;
+        this.rhs = rhs;
+    }
+
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
+    }
+}
+
+/**
+ * Parser class
+ * BNF
+ * <Expr> := <Unary> | <BinOp> | <AssignOp>
+ * <BinOP> := <Unary> (<op> <Unary>)+
+ * <AssignOp> :=  <Variable> <assign> <Expr>
+ * <Unary> := +<Primary> | -<Primary> | <Primary>
+ * <Primary> := <number> | <Variable>
+ * <Variable> := <number>
+ * <op> := (+ | -)*
+ * <assign> := "="
+ */
 
 class Parser {
     Lexer lexer;
@@ -165,8 +286,24 @@ class Parser {
         return new NumNode(i);
     }
 
-    AST parseExpr() throws ParseException{
-        AST node = parseNum();
+    VariableNode parseVariable() throws ParseException {
+        return new VariableNode()
+
+    }
+
+    AssignNode parseAssignOp() throws ParseException {
+        VariableNode node = parseVariable();
+    }
+
+    ExprNode parseExpr2() throws ParseException {
+        Token token = currentToken;
+        if(token.type == TokenType.ID) {
+            parseAssignOp();
+        }
+    }
+
+    ExprNode parseExpr() throws ParseException{
+        ExprNode node = parseNum();
         while(currentToken != null) {
             Token opToken;
             if(currentToken.type == TokenType.OP) {
@@ -176,6 +313,8 @@ class Parser {
                 } catch (ParseException e) {
                     throw e;
                 }
+            } else if(currentToken.type == TokenType.ID) {
+
             } else {
                 throw new ParseException("Invalid expression", 0);
             }
@@ -184,7 +323,7 @@ class Parser {
         return node;
     }
 
-    AST parse() throws ParseException{
+    ExprNode parse() throws ParseException{
         return parseExpr();
     }
 }
@@ -218,7 +357,7 @@ class Interpreter implements NodeVisitor {
     }
 
     Integer interpret() throws ParseException{
-        AST tree = this.parser.parse();
+        ExprNode tree = this.parser.parse();
         return tree.accept(this);
 
     }

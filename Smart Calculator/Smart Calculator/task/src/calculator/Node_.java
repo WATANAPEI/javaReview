@@ -11,15 +11,15 @@ import java.util.List;
 // <Operator> := + | -
 
 
-abstract class Node implements Traversable {
+abstract class Node_ implements Traversable {
     abstract void parse(Context context) throws ParseException;
 }
 
-class ExprNode extends Node {
+class ExprNode_ extends Node_ {
     // BNF
     // <Expr> := <Number> | (<RHS>)*
     public Integer number = 0;
-    public List<Node> rhs = new ArrayList<>();
+    public List<Node_> rhs = new ArrayList<>();
     public void parse(Context context) throws ParseException {
         try {
             number = context.getCurrentNumber();
@@ -27,7 +27,7 @@ class ExprNode extends Node {
             throw new ParseException("Error: " + e, 0);
         }
         while(context.nextToken() != null) {
-            Node rhsNode = new RhsNode();
+            Node_ rhsNode = new RhsNode();
             rhsNode.parse(context);
             rhs.add(rhsNode);
         }
@@ -47,7 +47,7 @@ class ExprNode extends Node {
     }
 }
 
-class RhsNode extends Node {
+class RhsNode extends Node_ {
     // BNF
     // <RHS> := <OperatorList> <Number>
     public OperatorNode operatorList;
@@ -77,7 +77,7 @@ class RhsNode extends Node {
 
 }
 
-class OperatorNode extends Node{
+class OperatorNode extends Node_ {
     // BNF
     // <Operator> := <Operator>*
     // <OperatorList> := + | -

@@ -8,7 +8,7 @@ class CalcVisitor implements CASTVisitor {
         this.result = 0;
     }
 
-    public int visit(ExprNode node) {
+    public int visit(ExprNode_ node) {
         result = node.number;
         for(var e: node.rhs) {
             visit((RhsNode)e);
