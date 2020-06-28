@@ -13,6 +13,9 @@ enum OpType {
     ADD,
     SUB;
 }
+enum AssignType {
+    ASSIGN;
+}
 /**
  * Token
  * Token type should be String(Operator) or Integer(Number)
@@ -91,28 +94,65 @@ class AssignToken extends Token {
  * Lexer
  */
 class Lexer {
-    private Scanner sc;
+    private PeekableScanner sc;
 
     Lexer(String line) {
-        sc = new Scanner(line);
+        sc = new PeekableScanner(line);
     }
+
     Token nextToken() {
         if (sc.hasNext()) {
             String nextStr = sc.next();
-            if (nextStr.matches("[\\+-]?\\d+")) {
-                return new NumToken(Integer.parseInt(nextStr));
-            } else if (nextStr.matches("\\w+")) {
-                return new IdToken(nextStr);
-            } else if (nextStr.matches("=")) {
-                return new AssignToken(nextStr);
-            } else {
-                return new OpToken(nextStr);
-            }
+            return dispatchToken(nextStr);
         } else {
             return null;
         }
     }
 
+    Token peekNextToken() {
+        String nextTokenString = sc.peek();
+        if(nextTokenString != null) {
+            return dispatchToken(nextTokenString);
+        } else {
+            return null;
+        }
+    }
+
+    Token dispatchToken(String tokenString) {
+        if (tokenString.matches("[\\+-]?\\d+")) {
+            return new NumToken(Integer.parseInt(tokenString));
+        } else if (tokenString.matches("\\w+")) {
+            return new IdToken(tokenString);
+        } else if (tokenString.matches("=")) {
+            return new AssignToken(tokenString);
+        } else {
+            return new OpToken(tokenString);
+        }
+    }
+}
+
+class PeekableScanner {
+    private Scanner sc;
+    private String next;
+
+    public PeekableScanner(String line) {
+        this.sc = new Scanner(line);
+        this.next = (sc.hasNext()? sc.next(): null);
+    }
+
+    public boolean hasNext() {
+        return next != null;
+    }
+
+    public String next() {
+        String result = next;
+        this.next = (sc.hasNext()? sc.next(): null);
+        return result;
+    }
+
+    public String peek() {
+        return next;
+    }
 }
 
 /**
@@ -121,58 +161,24 @@ class Lexer {
 
 abstract class Node {
     public Node() {}
-
-    abstract Integer accept(NodeVisitor v);
+    abstract void accept(NodeVisitor v);
+    abstract public String dump();
 }
 
-abstract class ExprNode extends Node_ {
+/**
+ * ExprNode
+ */
+abstract class ExprNode extends Node {
     ExprNode() {
         super();
     }
-
-    @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
-    }
 }
 
-class UnaryNode extends ExprNode {
-    PrimaryNode node;
-    String uniOp;
-
-    UnaryNode(PrimaryNode node, String uniOp) {
-        super();
-        this.node = node;
-        this.uniOp = uniOp;
-    }
-
-    UnaryNode(PrimaryNode node) {
-        new UnaryNode(node, "");
-    }
-
-    @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
-
-    }
-}
-
-class PrimaryNode extends ExprNode {
-    ExprNode node;
-    PrimaryNode(ExprNode node) {
-        super();
-        this.node = node;
-    }
-
-    @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
-    }
-}
-
-
+/**
+ * BinOpNode supports expression below:
+ * a + 2, 1 - 2, a + b
+ */
 class BinOpNode extends ExprNode {
-
     ExprNode left;
     OpType op;
     ExprNode right;
@@ -185,11 +191,97 @@ class BinOpNode extends ExprNode {
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
+    void accept(NodeVisitor v) {
+        v.visit(this);
+    }
+
+    @Override
+    public String dump() {
+        return String.format("%s %s %s\n", left.dump(), op.toString(), right.dump());
     }
 }
 
+class AssignNode extends ExprNode {
+    ExprNode lhs;
+    AssignType assignType;
+    ExprNode rhs;
+
+    AssignNode(ExprNode lhs, AssignType assignType, ExprNode rhs) {
+        super();
+        this.lhs = lhs;
+        this.assignType = assignType;
+        this.rhs = rhs;
+    }
+
+    @Override
+    void accept(NodeVisitor v) {
+        v.visit(this);
+    }
+
+    @Override
+    public String dump() {
+        return String.format("%s = %s", lhs, rhs);
+    }
+}
+
+/**
+ * UnaryNode supports expression below:
+ * a, -2, +b
+ */
+class UnaryNode extends ExprNode {
+    ExprNode node;
+    String uniOp;
+
+    UnaryNode(ExprNode node, String uniOp) {
+        super();
+        this.node = node;
+        this.uniOp = uniOp;
+    }
+
+    UnaryNode(ExprNode node) {
+        new UnaryNode(node, "");
+    }
+
+    @Override
+    void accept(NodeVisitor v) {
+        v.visit(this);
+    }
+
+    @Override
+    public String dump() {
+        return uniOp + node.dump();
+    }
+}
+
+/**
+ * PrimaryNode supports expression below:
+ * 22, 1
+ * NumNode only for now
+ */
+
+class PrimaryNode extends ExprNode {
+    NumNode node;
+    PrimaryNode(NumNode node) {
+        super();
+        this.node = node;
+    }
+
+    @Override
+    void accept(NodeVisitor v) {
+        v.visit(this);
+    }
+
+    @Override
+    public String dump() {
+        return node.dump();
+    }
+}
+
+
+/**
+ * NumNode supports expression like below:
+ * 1, 23, -30
+ */
 class NumNode extends ExprNode {
     Integer value;
     NumNode(Integer value) {
@@ -198,59 +290,62 @@ class NumNode extends ExprNode {
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
+    void accept(NodeVisitor v) {
+        v.visit(this);
     }
 
     public Integer getValue() {
         return value;
     }
-}
-
-class VariableNode extends ExprNode {
-    ExprNode node;
-
-    public VariableNode(ExprNode node) {
-        super();
-        this.node = node;
-    }
 
     @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
-    }
-
-}
-
-class AssignNode extends ExprNode {
-    ExprNode lhs;
-    AssignNode assignNode;
-    ExprNode rhs;
-
-    AssignNode(ExprNode lhs, AssignNode assignNode, ExprNode rhs) {
-        super();
-        this.lhs = lhs;
-        this.assignNode = assignNode;
-        this.rhs = rhs;
-    }
-
-    @Override
-    Integer accept(NodeVisitor v) {
-        return v.visit(this);
+    public String dump() {
+        return value.toString();
     }
 }
 
 /**
+ * VariableNode supports expression as below:
+ * a, bb
+ * evaluate the value of reference node during construction
+ */
+
+class VariableNode extends ExprNode {
+    NumNode node;
+    String image;
+
+    public VariableNode(NumNode node, String image) {
+        this.node = node;
+        this.image = image;
+    }
+    public VariableNode(String image) {
+        this.image = image;
+    }
+    public void setNode(NumNode node) {
+        this.node = node;
+    }
+    public Integer evaluate() {
+        return ((NumNode)node).getValue();
+    }
+
+    @Override
+    void accept(NodeVisitor v) {
+        v.visit(this);
+    }
+
+}
+
+
+/**
  * Parser class
- * BNF
- * <Expr> := <Unary> | <BinOp> | <AssignOp>
- * <BinOP> := <Unary> (<op> <Unary>)+
- * <AssignOp> :=  <Variable> <assign> <Expr>
- * <Unary> := +<Primary> | -<Primary> | <Primary>
- * <Primary> := <number> | <Variable>
- * <Variable> := <number>
- * <op> := (+ | -)*
- * <assign> := "="
+ * EBNF
+ * Expr = Unary | BinOp | AssignOp
+ * BinOP = Unary, {Op, Primary}
+ * AssignOp = Variable , "=", Unary
+ * Unary = ["+" | "-" ], Primary | Variable
+ * Primary = \\d+
+ * Variable = \\w+
+ * Op = "+" | "-" , {"+"}, {"-"}
  */
 
 class Parser {
@@ -275,6 +370,8 @@ class Parser {
         }
     }
 
+
+
     NumNode parseNum() throws ParseException{
         Token token = currentToken;
         try {
@@ -287,40 +384,71 @@ class Parser {
     }
 
     VariableNode parseVariable() throws ParseException {
-        return new VariableNode()
+        Token token = currentToken;
+        try {
+            consume(TokenType.ID);
+        } catch(ParseException e) {
+            throw e;
+        }
+        return new VariableNode(token.image);
 
+    }
+
+    PrimaryNode parsePrimary() throws ParseException {
+        return new PrimaryNode(parseNum());
+    }
+
+    UnaryNode parseUnary() throws ParseException {
+        Token token = currentToken;
+        String sign = String.valueOf(currentToken.image.charAt(0));
+        if(!sign.contentEquals("+") && !sign.contentEquals("-")) {
+            sign = "";
+        }
+        if(currentToken.type == TokenType.NUM) {
+            PrimaryNode node = parsePrimary();
+            return new UnaryNode(node, sign);
+        } else if (currentToken.type == TokenType.ID) {
+            VariableNode node = parseVariable();
+            return new UnaryNode(node, sign);
+        } else {
+            throw new ParseException("Invalid expression", 0);
+        }
     }
 
     AssignNode parseAssignOp() throws ParseException {
-        VariableNode node = parseVariable();
+        VariableNode lhs;
+        try {
+            lhs = parseVariable();
+            consume(TokenType.ASSIGN);
+        } catch (ParseException e) {
+            throw e;
+        }
+        return new AssignNode(lhs, AssignType.ASSIGN, parseUnary());
     }
 
-    ExprNode parseExpr2() throws ParseException {
-        Token token = currentToken;
-        if(token.type == TokenType.ID) {
-            parseAssignOp();
+    BinOpNode parseBinOp() throws ParseException {
+        UnaryNode lhs;
+        OpToken opToken;
+        try {
+            lhs = parseUnary();
+            opToken = (OpToken)currentToken;
+            consume(TokenType.OP);
+        } catch (ParseException e) {
+            throw e;
         }
+        return new BinOpNode(lhs, opToken.getValue(), parsePrimary());
     }
 
     ExprNode parseExpr() throws ParseException{
-        ExprNode node = parseNum();
-        while(currentToken != null) {
-            Token opToken;
-            if(currentToken.type == TokenType.OP) {
-                opToken = currentToken;
-                try {
-                    consume(TokenType.OP);
-                } catch (ParseException e) {
-                    throw e;
-                }
-            } else if(currentToken.type == TokenType.ID) {
-
-            } else {
-                throw new ParseException("Invalid expression", 0);
-            }
-            node = new BinOpNode(node, ((OpToken)opToken).getValue(), parseNum());
+        if(lexer.peekNextToken() == null) {
+            return parseUnary();
+        } else if(lexer.peekNextToken().type == TokenType.ASSIGN) {
+            return parseAssignOp();
+        } else if(lexer.peekNextToken().type == TokenType.OP) {
+            return parseBinOp();
+        } else {
+            throw new ParseException("Invalid expression", 0);
         }
-        return node;
     }
 
     ExprNode parse() throws ParseException{
@@ -333,8 +461,9 @@ class Parser {
  *
  */
 interface NodeVisitor {
-    Integer visit(BinOpNode node);
-    Integer visit(NumNode node);
+    void visit(BinOpNode node);
+    void visit(NumNode node);
+    void visit(AssignNode node);
 
 }
 
@@ -344,23 +473,27 @@ class Interpreter implements NodeVisitor {
         this.parser  = parser;
     }
 
-    public Integer visit(BinOpNode node) {
+    public void visit(BinOpNode node) {
         if(node.op == OpType.ADD) {
-            return node.left.accept(this) + node.right.accept(this);
+            System.out.println(node.left.accept(this) + node.right.accept(this));
         } else {
-            return node.left.accept(this) - node.right.accept(this);
+            System.out.println(node.left.accept(this) - node.right.accept(this));
         }
     }
 
-    public Integer visit(NumNode node) {
-        return node.getValue();
+    public void visit(AssignNode node) {
+
     }
 
-    Integer interpret() throws ParseException{
+    public void visit(NumNode node) {
+        System.out.println(node.getValue());
+    }
+
+    void interpret() throws ParseException{
         ExprNode tree = this.parser.parse();
-        return tree.accept(this);
-
+        tree.accept(this);
     }
+
 }
 
 public class Main {
@@ -385,7 +518,7 @@ public class Main {
                     Parser parser = new Parser(lexer); // generate AST
                     Interpreter interpreter = new Interpreter(parser);
                     try {
-                        System.out.println(interpreter.interpret());
+                        interpreter.interpret();
                     } catch(ParseException e) {
                         System.out.println(e.getMessage());
                     }
