@@ -1,6 +1,9 @@
 package calculator;
 
+import java.awt.datatransfer.SystemFlavorMap;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 enum TokenType {
@@ -161,7 +164,7 @@ class PeekableScanner {
 
 abstract class Node {
     public Node() {}
-    abstract void accept(NodeVisitor v);
+    abstract Integer accept(NodeVisitor v);
     abstract public String dump();
 }
 
@@ -191,8 +194,8 @@ class BinOpNode extends ExprNode {
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
     @Override
@@ -202,11 +205,11 @@ class BinOpNode extends ExprNode {
 }
 
 class AssignNode extends ExprNode {
-    ExprNode lhs;
+    VariableNode lhs;
     AssignType assignType;
-    ExprNode rhs;
+    UnaryNode rhs;
 
-    AssignNode(ExprNode lhs, AssignType assignType, ExprNode rhs) {
+    AssignNode(VariableNode lhs, AssignType assignType, UnaryNode rhs) {
         super();
         this.lhs = lhs;
         this.assignType = assignType;
@@ -214,8 +217,8 @@ class AssignNode extends ExprNode {
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
     @Override
@@ -243,8 +246,8 @@ class UnaryNode extends ExprNode {
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
     @Override
@@ -267,8 +270,8 @@ class PrimaryNode extends ExprNode {
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
     @Override
@@ -290,8 +293,8 @@ class NumNode extends ExprNode {
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
     public Integer getValue() {
@@ -318,19 +321,27 @@ class VariableNode extends ExprNode {
         this.node = node;
         this.image = image;
     }
+
     public VariableNode(String image) {
         this.image = image;
     }
+
     public void setNode(NumNode node) {
         this.node = node;
     }
+
     public Integer evaluate() {
         return ((NumNode)node).getValue();
     }
 
     @Override
-    void accept(NodeVisitor v) {
-        v.visit(this);
+    public String dump() {
+        return this.image;
+    }
+
+    @Override
+    Integer accept(NodeVisitor v) {
+        return v.visit(this);
     }
 
 }
@@ -369,8 +380,6 @@ class Parser {
             throw new ParseException("Invalid expression", 0);
         }
     }
-
-
 
     NumNode parseNum() throws ParseException{
         Token token = currentToken;
@@ -461,32 +470,53 @@ class Parser {
  *
  */
 interface NodeVisitor {
-    void visit(BinOpNode node);
-    void visit(NumNode node);
-    void visit(AssignNode node);
+    Integer visit(BinOpNode node);
+    Integer visit(NumNode node);
+    Integer visit(AssignNode node);
+    Integer visit(UnaryNode node);
+    Integer visit(PrimaryNode node);
+    Integer visit(VariableNode node);
 
 }
 
 class Interpreter implements NodeVisitor {
     Parser parser;
+
     Interpreter(Parser parser) {
         this.parser  = parser;
     }
 
-    public void visit(BinOpNode node) {
+    public Integer visit(BinOpNode node) {
         if(node.op == OpType.ADD) {
-            System.out.println(node.left.accept(this) + node.right.accept(this));
+            return node.left.accept(this) + node.right.accept(this);
         } else {
-            System.out.println(node.left.accept(this) - node.right.accept(this));
+            return node.left.accept(this) - node.right.accept(this);
         }
     }
 
-    public void visit(AssignNode node) {
-
+    public Integer visit(AssignNode node) {
+        Main.nodeMap.put(node.lhs.image, node.rhs.accept(this));
+        return null;
     }
 
-    public void visit(NumNode node) {
-        System.out.println(node.getValue());
+    public Integer visit(UnaryNode node) {
+        if(node.uniOp.contentEquals("+") || node.uniOp.contentEquals("")) {
+            return node.node.accept(this);
+        } else {
+            return -1 * node.node.accept(this);
+        }
+    }
+
+    public Integer visit(VariableNode node) {
+        return node.node.getValue();
+    }
+
+    public Integer visit(NumNode node) {
+        return node.getValue();
+    }
+
+    public Integer visit(PrimaryNode node) {
+        return node.node.getValue();
     }
 
     void interpret() throws ParseException{
@@ -497,6 +527,7 @@ class Interpreter implements NodeVisitor {
 }
 
 public class Main {
+    public static Map<String, Integer> nodeMap = new HashMap<>();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
