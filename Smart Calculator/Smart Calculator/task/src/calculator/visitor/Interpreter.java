@@ -1,11 +1,17 @@
-package calculator;
+package calculator.visitor;
+
+import calculator.Main;
+import calculator.visitor.NodeVisitor;
+import calculator.OpType;
+import calculator.Parser;
+import calculator.node.*;
 
 import java.text.ParseException;
 
-class Interpreter implements NodeVisitor {
+public class Interpreter implements NodeVisitor {
     Parser parser;
 
-    Interpreter(Parser parser) {
+    public Interpreter(Parser parser) {
         this.parser  = parser;
     }
 
@@ -43,7 +49,7 @@ class Interpreter implements NodeVisitor {
         return node.node.getValue();
     }
 
-    void interpret() throws ParseException {
+    public void interpret() throws ParseException {
         ExprNode tree = this.parser.parse();
         tree.accept(this);
     }

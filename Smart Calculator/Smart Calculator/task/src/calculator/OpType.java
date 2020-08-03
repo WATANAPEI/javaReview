@@ -1,6 +1,6 @@
 package calculator;
 
-enum OpType {
+public enum OpType {
     ADD,
     SUB;
 }

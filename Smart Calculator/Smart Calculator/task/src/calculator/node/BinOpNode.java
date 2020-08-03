@@ -1,14 +1,19 @@
-package calculator;
+package calculator.node;
+
+import calculator.node.ExprNode;
+import calculator.visitor.NodeVisitor;
+import calculator.OpType;
+
 /**
  * BinOpNode supports expression below:
  * a + 2, 1 - 2, a + b
  */
-class BinOpNode extends ExprNode {
-    ExprNode left;
-    OpType op;
-    ExprNode right;
+public class BinOpNode extends ExprNode {
+    public ExprNode left;
+    public OpType op;
+    public ExprNode right;
 
-    BinOpNode(ExprNode left, OpType op, ExprNode right) {
+    public BinOpNode(ExprNode left, OpType op, ExprNode right) {
         super();
         this.left = left;
         this.op = op;

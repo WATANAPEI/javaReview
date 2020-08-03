@@ -1,5 +1,11 @@
 package calculator;
 
+import calculator.node.*;
+import calculator.token.NumToken;
+import calculator.token.OpToken;
+import calculator.token.Token;
+import calculator.token.TokenType;
+
 import java.text.ParseException;
 
 /**
@@ -14,7 +20,7 @@ import java.text.ParseException;
  * Op = "+" | "-" , {"+"}, {"-"}
  */
 
-class Parser {
+public class Parser {
     Lexer lexer;
     Token currentToken;
     Parser(Lexer lexer) {
@@ -115,7 +121,7 @@ class Parser {
         }
     }
 
-    ExprNode parse() throws ParseException{
+    public ExprNode parse() throws ParseException{
         return parseExpr();
     }
 }

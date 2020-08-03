@@ -1,8 +1,8 @@
-package calculator;
+package calculator.token;
 
-class NumToken extends Token {
+public class NumToken extends Token {
     private Integer value;
-    NumToken(Integer value) {
+    public NumToken(Integer value) {
         this.value = value;
         this.type = TokenType.NUM;
         this.image = value.toString();

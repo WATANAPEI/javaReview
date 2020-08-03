@@ -1,11 +1,13 @@
-package calculator;
+package calculator.token;
+
+import calculator.OpType;
 
 import java.text.ParseException;
 
-class OpToken extends Token {
+public class OpToken extends Token {
     private OpType translatedOp;
 
-    OpToken(String value) {
+    public OpToken(String value) {
         this.type = TokenType.OP;
         this.image = value;
         this.translatedOp = translate(value);
@@ -27,7 +29,7 @@ class OpToken extends Token {
         }
         return operator;
     }
-    OpType getValue() {
+    public OpType getValue() {
         return this.translatedOp;
     }
 

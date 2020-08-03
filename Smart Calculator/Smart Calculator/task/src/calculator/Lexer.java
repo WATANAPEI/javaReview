@@ -1,4 +1,7 @@
 package calculator;
+
+import calculator.token.*;
+
 /**
  * Lexer
  */

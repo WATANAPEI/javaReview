@@ -1,10 +1,12 @@
-package calculator;
+package calculator.visitor;
+
+import calculator.node.*;
 
 /**
  * NodeVisitor
  *
  */
-interface NodeVisitor {
+public interface NodeVisitor {
     Integer visit(BinOpNode node);
     Integer visit(NumNode node);
     Integer visit(AssignNode node);

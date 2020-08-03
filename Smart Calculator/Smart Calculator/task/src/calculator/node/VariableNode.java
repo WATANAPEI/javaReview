@@ -1,13 +1,16 @@
-package calculator;
+package calculator.node;
+
+import calculator.visitor.NodeVisitor;
+
 /**
  * VariableNode supports expression as below:
  * a, bb
  * evaluate the value of reference node during construction
  */
 
-class VariableNode extends ExprNode {
-    UnaryNode node;
-    String image;
+public abstract class VariableNode extends ExprNode {
+    public UnaryNode node;
+    public String image;
 
     public VariableNode(UnaryNode node, String image) {
         this.node = node;
@@ -28,7 +31,7 @@ class VariableNode extends ExprNode {
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
+    public Integer accept(NodeVisitor v) {
         return v.visit(this);
     }
 

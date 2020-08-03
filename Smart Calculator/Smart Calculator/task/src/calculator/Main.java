@@ -1,13 +1,11 @@
 package calculator;
 
-import java.awt.datatransfer.SystemFlavorMap;
+import calculator.visitor.Interpreter;
+
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-
-
-
 
 public class Main {
     public static Map<String, Integer> nodeMap = new HashMap<>();

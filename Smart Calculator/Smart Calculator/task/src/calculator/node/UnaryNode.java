@@ -1,13 +1,16 @@
-package calculator;
+package calculator.node;
+
+import calculator.NodeVisitor;
+
 /**
  * UnaryNode supports expression below:
  * a, -2, +b
  */
-class UnaryNode extends ExprNode {
-    ExprNode node;
-    String uniOp;
+public class UnaryNode extends ExprNode {
+    public ExprNode node;
+    public String uniOp;
 
-    UnaryNode(ExprNode node, String uniOp) {
+    public UnaryNode(ExprNode node, String uniOp) {
         super();
         this.node = node;
         this.uniOp = uniOp;

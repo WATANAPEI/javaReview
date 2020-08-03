@@ -1,5 +1,5 @@
 package calculator;
 
-enum AssignType {
+public enum AssignType {
     ASSIGN;
 }

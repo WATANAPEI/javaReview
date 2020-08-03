@@ -1,17 +1,20 @@
-package calculator;
+package calculator.node;
+
+import calculator.visitor.NodeVisitor;
+
 /**
  * NumNode supports expression like below:
  * 1, 23, -30
  */
-class NumNode extends ExprNode {
+public class NumNode extends ExprNode {
     Integer value;
-    NumNode(Integer value) {
+    public NumNode(Integer value) {
         super();
         this.value = value;
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
+    public Integer accept(NodeVisitor v) {
         return v.visit(this);
     }
 
