@@ -1,6 +1,6 @@
 package calculator.node;
 
-import calculator.NodeVisitor;
+import calculator.visitor.NodeVisitor;
 
 /**
  * UnaryNode supports expression below:
@@ -21,7 +21,7 @@ public class UnaryNode extends ExprNode {
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
+    public Integer accept(NodeVisitor v) {
         return v.visit(this);
     }
 

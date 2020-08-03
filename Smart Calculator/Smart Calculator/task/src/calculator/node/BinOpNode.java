@@ -21,7 +21,7 @@ public class BinOpNode extends ExprNode {
     }
 
     @Override
-    Integer accept(NodeVisitor v) {
+    public Integer accept(NodeVisitor v) {
         return v.visit(this);
     }
 

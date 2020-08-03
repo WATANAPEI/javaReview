@@ -8,7 +8,7 @@ import calculator.visitor.NodeVisitor;
  * evaluate the value of reference node during construction
  */
 
-public abstract class VariableNode extends ExprNode {
+public class VariableNode extends ExprNode {
     public UnaryNode node;
     public String image;
 
